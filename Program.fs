@@ -13,12 +13,13 @@ type CarTravel = { Duration: TimeSpan }
 type ShipVoyage =
     { Date: DateTime
       DepartsOn: TimeSpan
-      ArrivesOn: TimeSpan
-     }
+      ArrivesOn: TimeSpan }
 
     member this.Duration = this.ArrivesOn - this.DepartsOn
 
-type ShipTravel = { Timetable: ShipVoyage list; MinTimeBeforeDeparture: TimeSpan }
+type ShipTravel =
+    { Timetable: ShipVoyage list
+      MinTimeBeforeDeparture: TimeSpan }
 
 type Pause = { Duration: TimeSpan }
 
@@ -109,47 +110,7 @@ let rec continueTrip
 
         match currentLeg.Type with
         | Ship shipTravel ->
-            let viableVoyages =
-                shipTravel.Timetable
-                |> List.filter (fun voyage ->
-                    let voyageArrivalTime = voyage.Date.Date + voyage.ArrivesOn
-                    voyageArrivalTime <= currentTime)
-
-            match viableVoyages with
-            | [] -> trip
-            | viableVoyages ->
-                let firstViableVoyage = viableVoyages |> List.head
-
-                let currentTime =
-                    firstViableVoyage.Date.Date + firstViableVoyage.ArrivesOn
-
-                let trip =
-                    { Points =
-                        { Point = currentLeg.To
-                          Description = "ship arrival"
-                          Time = currentTime }
-                        :: trip.Points }
-
-                let currentTime =
-                    firstViableVoyage.Date.Date + firstViableVoyage.DepartsOn
-
-                let trip =
-                    { Points =
-                        { Point = currentLeg.From
-                          Description = "ship departure"
-                          Time = currentTime }
-                        :: trip.Points }
-
-                let currentTime = currentTime - shipTravel.MinTimeBeforeDeparture
-
-                let tripPoint =
-                    { Point = currentLeg.From
-                      Description = "car arrival at the port"
-                      Time = currentTime }
-
-                let trip = { Points = tripPoint :: trip.Points }
-
-                continueTrip routeLegsReversed (legIndex + 1) trip currentTime
+            coverShipTravel routeLegsReversed legIndex currentLeg shipTravel trip currentTime
 
         | Car { Duration = duration } ->
             // todo 10: don't include car arrival if there's already an identical point in the trip
@@ -174,31 +135,45 @@ let rec continueTrip
             let currentTime = currentTime - duration
             continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
-let findFirstFeasibleTrip (route: TripRoute) voyageIndex =
-    let routeLegsReversed = route.Legs |> List.rev
-    let currentLeg = routeLegsReversed.[0]
 
-    // todo 5: make this code reusable
-    match currentLeg.Type with
-    | Ship shipTravel ->
-        let voyage = shipTravel.Timetable.[voyageIndex]
-        let currentTime = voyage.Date.Date + voyage.ArrivesOn
+and coverShipTravel
+    routeLegsReversed
+    legIndex
+    currentLeg
+    shipTravel
+    trip
+    currentTime
+    =
+    let viableVoyages =
+        shipTravel.Timetable
+        |> List.filter (fun voyage ->
+            let voyageArrivalTime = voyage.Date.Date + voyage.ArrivesOn
+            voyageArrivalTime <= currentTime)
 
-        let tripPoint =
-            { Point = currentLeg.To
-              Description = "ship arrival"
-              Time = currentTime }
-            
-        let trip = { Points = [ tripPoint ] }
+    match viableVoyages with
+    | [] -> trip
+    | viableVoyages ->
+        let firstViableVoyage = viableVoyages |> List.head
 
-        let currentTime = currentTime - voyage.Duration
+        let currentTime =
+            firstViableVoyage.Date.Date + firstViableVoyage.ArrivesOn
 
-        let tripPoint =
-            { Point = currentLeg.From
-              Description = "ship departure"
-              Time = currentTime }
+        let trip =
+            { Points =
+                { Point = currentLeg.To
+                  Description = "ship arrival"
+                  Time = currentTime }
+                :: trip.Points }
 
-        let trip = { Points = tripPoint :: trip.Points }
+        let currentTime =
+            firstViableVoyage.Date.Date + firstViableVoyage.DepartsOn
+
+        let trip =
+            { Points =
+                { Point = currentLeg.From
+                  Description = "ship departure"
+                  Time = currentTime }
+                :: trip.Points }
 
         let currentTime = currentTime - shipTravel.MinTimeBeforeDeparture
 
@@ -209,9 +184,26 @@ let findFirstFeasibleTrip (route: TripRoute) voyageIndex =
 
         let trip = { Points = tripPoint :: trip.Points }
 
-        let trip = continueTrip routeLegsReversed 1 trip currentTime
+        continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
-        trip
+
+// todo 5: instead of the voyage index, we should receive the time we want to be at the final point
+let findFirstFeasibleTrip (route: TripRoute) voyageIndex =
+    let routeLegsReversed = route.Legs |> List.rev
+    let currentLeg = routeLegsReversed.[0]
+
+    match currentLeg.Type with
+    | Ship shipTravel ->
+        let voyage = shipTravel.Timetable.[voyageIndex]
+        let currentTime = voyage.Date.Date + voyage.ArrivesOn
+
+        coverShipTravel
+            routeLegsReversed
+            0
+            currentLeg
+            shipTravel
+            { Points = [] }
+            currentTime
     | _ -> raise (InvalidOperationException("Only ship legs are allowed here"))
 
 
