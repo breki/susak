@@ -49,7 +49,11 @@ let maliLosinjToSusakTimetable =
 
 let valbiskaMeragTimetable =
     { Timetable =
-        [ { Date = DateTime(2023, 07, 26)
+        [
+          { Date = DateTime(2023, 07, 25)
+            DepartsOn = TimeSpan(23, 59, 0)
+            ArrivesOn = TimeSpan(00, 24, 0) }
+          { Date = DateTime(2023, 07, 26)
             DepartsOn = TimeSpan(5, 45, 0)
             ArrivesOn = TimeSpan(6, 10, 0) }
           { Date = DateTime(2023, 07, 26)
@@ -64,9 +68,7 @@ let valbiskaMeragTimetable =
           { Date = DateTime(2023, 07, 26)
             DepartsOn = TimeSpan(12, 15, 0)
             ArrivesOn = TimeSpan(12, 40, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(23, 59, 0)
-            ArrivesOn = TimeSpan(00, 24, 0) } ]
+          ]
       MinTimeBeforeDeparture = TimeSpan(1, 0, 0) }
 
 let mariborSusakRoute =
@@ -96,6 +98,13 @@ type TripPoint =
       Time: DateTime }
 
 type Trip = { Points: TripPoint list }
+
+type Trip with
+
+    member this.TripDuration() =
+        let firstPoint = this.Points.[0]
+        let lastPoint = this.Points.[this.Points.Length - 1]
+        lastPoint.Time - firstPoint.Time
 
 let rec continueTrip
     (routeLegsReversed: TripLeg list)
@@ -140,11 +149,16 @@ let rec continueTrip
             let currentTime = currentTime - duration
             continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
-and xxx (routeLegsReversed: TripLeg list) legIndex shipTravel voyage trip  =
+and coverShipVoyage
+    (routeLegsReversed: TripLeg list)
+    legIndex
+    shipTravel
+    voyage
+    trip
+    =
     let currentLeg = routeLegsReversed.[legIndex]
-    
-    let currentTime =
-        voyage.Date.Date + voyage.ArrivesOn
+
+    let currentTime = voyage.Date.Date + voyage.ArrivesOn
 
     let trip =
         { Points =
@@ -153,8 +167,7 @@ and xxx (routeLegsReversed: TripLeg list) legIndex shipTravel voyage trip  =
               Time = currentTime }
             :: trip.Points }
 
-    let currentTime =
-        voyage.Date.Date + voyage.DepartsOn
+    let currentTime = voyage.Date.Date + voyage.DepartsOn
 
     let trip =
         { Points =
@@ -173,7 +186,7 @@ and xxx (routeLegsReversed: TripLeg list) legIndex shipTravel voyage trip  =
     let trip = { Points = tripPoint :: trip.Points }
 
     continueTrip routeLegsReversed (legIndex + 1) trip currentTime
-    
+
 
 and coverShipTravel
     routeLegsReversed
@@ -192,7 +205,8 @@ and coverShipTravel
     | [] -> None |> Seq.singleton
     | viableVoyages ->
         viableVoyages
-        |> Seq.map (fun voyage -> xxx routeLegsReversed legIndex shipTravel voyage trip)
+        |> Seq.map (fun voyage ->
+            coverShipVoyage routeLegsReversed legIndex shipTravel voyage trip)
         |> Seq.concat
 
 
@@ -224,15 +238,14 @@ let main _ =
     trips
     |> List.iteri (fun index trip ->
         printfn ""
-        printfn $"Trip %d{index + 1}:"
+        let durationStr = trip.TripDuration().ToString("hh\\:mm")
+        printfn $"Trip %d{index + 1} (duration %s{durationStr}):"
 
         trip.Points
         |> List.iter (fun point ->
-            let time = point.Time.ToString("HH:mm")
+            let time = point.Time.ToString("dd HH:mm")
             printfn $"%s{time}: %A{point.Point} (%s{point.Description})"))
 
     0 // return an integer exit code
 
-
-
-// todo 7: transform the search function(s) to return a sequence of trips
+// todo 5: add duration risk factor for car travel
