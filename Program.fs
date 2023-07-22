@@ -102,9 +102,9 @@ let rec continueTrip
     legIndex
     trip
     currentTime
-    =
+    : Trip option seq =
     if legIndex >= routeLegsReversed.Length then
-        trip
+        Some trip |> Seq.singleton
     else
         let currentLeg = routeLegsReversed[legIndex]
 
@@ -113,7 +113,6 @@ let rec continueTrip
             coverShipTravel
                 routeLegsReversed
                 legIndex
-                currentLeg
                 shipTravel
                 trip
                 currentTime
@@ -141,15 +140,48 @@ let rec continueTrip
             let currentTime = currentTime - duration
             continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
+and xxx (routeLegsReversed: TripLeg list) legIndex shipTravel voyage trip  =
+    let currentLeg = routeLegsReversed.[legIndex]
+    
+    let currentTime =
+        voyage.Date.Date + voyage.ArrivesOn
+
+    let trip =
+        { Points =
+            { Point = currentLeg.To
+              Description = "ship arrival"
+              Time = currentTime }
+            :: trip.Points }
+
+    let currentTime =
+        voyage.Date.Date + voyage.DepartsOn
+
+    let trip =
+        { Points =
+            { Point = currentLeg.From
+              Description = "ship departure"
+              Time = currentTime }
+            :: trip.Points }
+
+    let currentTime = currentTime - shipTravel.MinTimeBeforeDeparture
+
+    let tripPoint =
+        { Point = currentLeg.From
+          Description = "car arrival at the port"
+          Time = currentTime }
+
+    let trip = { Points = tripPoint :: trip.Points }
+
+    continueTrip routeLegsReversed (legIndex + 1) trip currentTime
+    
 
 and coverShipTravel
     routeLegsReversed
     legIndex
-    currentLeg
     shipTravel
-    trip
+    (trip: Trip)
     currentTime
-    =
+    : Trip option seq =
     let viableVoyages =
         shipTravel.Timetable
         |> List.filter (fun voyage ->
@@ -157,43 +189,14 @@ and coverShipTravel
             voyageArrivalTime <= currentTime)
 
     match viableVoyages with
-    | [] -> trip
+    | [] -> None |> Seq.singleton
     | viableVoyages ->
-        let firstViableVoyage = viableVoyages |> List.head
-
-        let currentTime =
-            firstViableVoyage.Date.Date + firstViableVoyage.ArrivesOn
-
-        let trip =
-            { Points =
-                { Point = currentLeg.To
-                  Description = "ship arrival"
-                  Time = currentTime }
-                :: trip.Points }
-
-        let currentTime =
-            firstViableVoyage.Date.Date + firstViableVoyage.DepartsOn
-
-        let trip =
-            { Points =
-                { Point = currentLeg.From
-                  Description = "ship departure"
-                  Time = currentTime }
-                :: trip.Points }
-
-        let currentTime = currentTime - shipTravel.MinTimeBeforeDeparture
-
-        let tripPoint =
-            { Point = currentLeg.From
-              Description = "car arrival at the port"
-              Time = currentTime }
-
-        let trip = { Points = tripPoint :: trip.Points }
-
-        continueTrip routeLegsReversed (legIndex + 1) trip currentTime
+        viableVoyages
+        |> Seq.map (fun voyage -> xxx routeLegsReversed legIndex shipTravel voyage trip)
+        |> Seq.concat
 
 
-let findFirstFeasibleTrip (route: TripRoute) desiredArrivalTime =
+let findTrips (route: TripRoute) desiredArrivalTime : Trip option seq =
     let routeLegsReversed = route.Legs |> List.rev
     let currentLeg = routeLegsReversed.[0]
 
@@ -202,28 +205,20 @@ let findFirstFeasibleTrip (route: TripRoute) desiredArrivalTime =
         coverShipTravel
             routeLegsReversed
             0
-            currentLeg
             shipTravel
             { Points = [] }
             desiredArrivalTime
     | _ -> raise (InvalidOperationException("Only ship legs are allowed here"))
 
-
-let findTrips (route: TripRoute) : Trip list =
-    let legs = mariborSusakRoute.Legs |> List.rev
-
-    let firstLeg = legs |> List.head
-
-    match firstLeg.Type with
-    | Ship { Timetable = timetable } ->
-        timetable
-        |> List.mapi (fun voyageIndex voyage ->
-            findFirstFeasibleTrip route (DateTime(2023, 07, 26, 17, 0, 0)))
-    | _ -> raise (NotImplementedException())
-
 [<EntryPoint>]
-let main argv =
-    let trips = findTrips mariborSusakRoute
+let main _ =
+    let desiredArrivalTime = DateTime(2023, 07, 26, 18, 0, 0)
+
+    let trips =
+        findTrips mariborSusakRoute desiredArrivalTime
+        |> Seq.choose id
+        |> Seq.toList
+
     printfn $"Found %d{trips.Length} trips"
 
     trips
