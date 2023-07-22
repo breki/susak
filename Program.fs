@@ -13,11 +13,12 @@ type CarTravel = { Duration: TimeSpan }
 type ShipVoyage =
     { Date: DateTime
       DepartsOn: TimeSpan
-      ArrivesOn: TimeSpan }
+      ArrivesOn: TimeSpan
+     }
 
     member this.Duration = this.ArrivesOn - this.DepartsOn
 
-type ShipTravel = { Timetable: ShipVoyage list }
+type ShipTravel = { Timetable: ShipVoyage list; MinTimeBeforeDeparture: TimeSpan }
 
 type Pause = { Duration: TimeSpan }
 
@@ -34,21 +35,6 @@ type TripLeg =
 
 type TripRoute = { Legs: TripLeg list }
 
-// type TimeOnly = {
-//     SecondsOfDay: int
-// }
-//     with
-//     member this.ToString =
-//         // format to hours and minutes
-//         let hours = this.SecondsOfDay / 3600
-//         let minutes = (this.SecondsOfDay - (hours * 3600)) / 60
-//         $"%02d{hours}:%02d{minutes}"
-//
-//     static member FromHoursMinutes (hours: int) (minutes: int) =
-//         { SecondsOfDay = (hours * 3600) + (minutes * 60) }
-
-
-
 
 let maliLosinjToSusakTimetable =
     { Timetable =
@@ -57,7 +43,8 @@ let maliLosinjToSusakTimetable =
             ArrivesOn = TimeSpan(7, 55, 0) }
           { Date = DateTime(2023, 07, 26)
             DepartsOn = TimeSpan(13, 30, 0)
-            ArrivesOn = TimeSpan(14, 25, 0) } ] }
+            ArrivesOn = TimeSpan(14, 25, 0) } ]
+      MinTimeBeforeDeparture = TimeSpan(1, 0, 0) }
 
 let valbiskaMeragTimetable =
     { Timetable =
@@ -78,7 +65,8 @@ let valbiskaMeragTimetable =
             ArrivesOn = TimeSpan(12, 40, 0) }
           { Date = DateTime(2023, 07, 26)
             DepartsOn = TimeSpan(23, 59, 0)
-            ArrivesOn = TimeSpan(00, 24, 0) } ] }
+            ArrivesOn = TimeSpan(00, 24, 0) } ]
+      MinTimeBeforeDeparture = TimeSpan(1, 0, 0) }
 
 let mariborSusakRoute =
     { Legs =
@@ -94,14 +82,17 @@ let mariborSusakRoute =
           { From = Merag
             To = MaliLosinj
             Type = Car { Duration = TimeSpan(1, 5, 0) } }
-          { From = MaliLosinj
-            To = MaliLosinj
-            Type = Pause { Duration = TimeSpan(1, 0, 0) } }
+          // { From = MaliLosinj
+          //   To = MaliLosinj
+          //   Type = Pause { Duration = TimeSpan(1, 0, 0) } }
           { From = MaliLosinj
             To = Susak
             Type = Ship maliLosinjToSusakTimetable } ] }
 
-type TripPoint = { Point: TripNode; Description: string; Time: DateTime }
+type TripPoint =
+    { Point: TripNode
+      Description: string
+      Time: DateTime }
 
 type Trip = { Points: TripPoint list }
 
@@ -117,9 +108,9 @@ let rec continueTrip
         let currentLeg = routeLegsReversed[legIndex]
 
         match currentLeg.Type with
-        | Ship { Timetable = timetable } ->
+        | Ship shipTravel ->
             let viableVoyages =
-                timetable
+                shipTravel.Timetable
                 |> List.filter (fun voyage ->
                     let voyageArrivalTime = voyage.Date.Date + voyage.ArrivesOn
                     voyageArrivalTime <= currentTime)
@@ -135,7 +126,7 @@ let rec continueTrip
                 let trip =
                     { Points =
                         { Point = currentLeg.To
-                          Description = "ship arrival" 
+                          Description = "ship arrival"
                           Time = currentTime }
                         :: trip.Points }
 
@@ -145,16 +136,26 @@ let rec continueTrip
                 let trip =
                     { Points =
                         { Point = currentLeg.From
-                          Description = "ship departure" 
+                          Description = "ship departure"
                           Time = currentTime }
                         :: trip.Points }
+
+                let currentTime = currentTime - shipTravel.MinTimeBeforeDeparture
+
+                let tripPoint =
+                    { Point = currentLeg.From
+                      Description = "car arrival at the port"
+                      Time = currentTime }
+
+                let trip = { Points = tripPoint :: trip.Points }
 
                 continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
         | Car { Duration = duration } ->
+            // todo 10: don't include car arrival if there's already an identical point in the trip
             let tripPoint =
                 { Point = currentLeg.To
-                  Description = "car arrival" 
+                  Description = "car arrival"
                   Time = currentTime }
 
             let trip = { Points = tripPoint :: trip.Points }
@@ -163,7 +164,7 @@ let rec continueTrip
 
             let tripPoint =
                 { Point = currentLeg.From
-                  Description = "car departure" 
+                  Description = "car departure"
                   Time = currentTime }
 
             let trip = { Points = tripPoint :: trip.Points }
@@ -171,39 +172,42 @@ let rec continueTrip
             continueTrip routeLegsReversed (legIndex + 1) trip currentTime
         | Pause { Duration = duration } ->
             let currentTime = currentTime - duration
-
-            let tripPoint =
-                { Point = currentLeg.To
-                  Description = "after pause" 
-                  Time = currentTime }
-
-            let trip = { Points = tripPoint :: trip.Points }
-
             continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
 let findFirstFeasibleTrip (route: TripRoute) voyageIndex =
     let routeLegsReversed = route.Legs |> List.rev
     let currentLeg = routeLegsReversed.[0]
 
+    // todo 5: make this code reusable
     match currentLeg.Type with
-    | Ship { Timetable = timetable } ->
-        let voyage = timetable.[voyageIndex]
+    | Ship shipTravel ->
+        let voyage = shipTravel.Timetable.[voyageIndex]
         let currentTime = voyage.Date.Date + voyage.ArrivesOn
 
-        let tripPoint2 =
+        let tripPoint =
             { Point = currentLeg.To
-              Description = "ship arrival"          
+              Description = "ship arrival"
               Time = currentTime }
+            
+        let trip = { Points = [ tripPoint ] }
 
         let currentTime = currentTime - voyage.Duration
 
-        let tripPoint1 =
+        let tripPoint =
             { Point = currentLeg.From
-              Description = "ship departure"          
+              Description = "ship departure"
               Time = currentTime }
 
-        let trip = { Points = [ tripPoint1; tripPoint2 ] }
+        let trip = { Points = tripPoint :: trip.Points }
 
+        let currentTime = currentTime - shipTravel.MinTimeBeforeDeparture
+
+        let tripPoint =
+            { Point = currentLeg.From
+              Description = "car arrival at the port"
+              Time = currentTime }
+
+        let trip = { Points = tripPoint :: trip.Points }
 
         let trip = continueTrip routeLegsReversed 1 trip currentTime
 
@@ -232,9 +236,10 @@ let main argv =
     |> List.iteri (fun index trip ->
         printfn ""
         printfn $"Trip %d{index + 1}:"
-        
+
         trip.Points
         |> List.iter (fun point ->
-            printfn $"%A{point.Point} (%s{point.Description}) at %A{point.Time}"))
+            let time = point.Time.ToString("HH:mm")
+            printfn $"%s{time}: %A{point.Point} (%s{point.Description})"))
 
     0 // return an integer exit code
