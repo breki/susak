@@ -110,7 +110,13 @@ let rec continueTrip
 
         match currentLeg.Type with
         | Ship shipTravel ->
-            coverShipTravel routeLegsReversed legIndex currentLeg shipTravel trip currentTime
+            coverShipTravel
+                routeLegsReversed
+                legIndex
+                currentLeg
+                shipTravel
+                trip
+                currentTime
 
         | Car { Duration = duration } ->
             // todo 10: don't include car arrival if there's already an identical point in the trip
@@ -187,23 +193,19 @@ and coverShipTravel
         continueTrip routeLegsReversed (legIndex + 1) trip currentTime
 
 
-// todo 5: instead of the voyage index, we should receive the time we want to be at the final point
-let findFirstFeasibleTrip (route: TripRoute) voyageIndex =
+let findFirstFeasibleTrip (route: TripRoute) desiredArrivalTime =
     let routeLegsReversed = route.Legs |> List.rev
     let currentLeg = routeLegsReversed.[0]
 
     match currentLeg.Type with
     | Ship shipTravel ->
-        let voyage = shipTravel.Timetable.[voyageIndex]
-        let currentTime = voyage.Date.Date + voyage.ArrivesOn
-
         coverShipTravel
             routeLegsReversed
             0
             currentLeg
             shipTravel
             { Points = [] }
-            currentTime
+            desiredArrivalTime
     | _ -> raise (InvalidOperationException("Only ship legs are allowed here"))
 
 
@@ -216,7 +218,7 @@ let findTrips (route: TripRoute) : Trip list =
     | Ship { Timetable = timetable } ->
         timetable
         |> List.mapi (fun voyageIndex voyage ->
-            findFirstFeasibleTrip route voyageIndex)
+            findFirstFeasibleTrip route (DateTime(2023, 07, 26, 17, 0, 0)))
     | _ -> raise (NotImplementedException())
 
 [<EntryPoint>]
@@ -235,3 +237,7 @@ let main argv =
             printfn $"%s{time}: %A{point.Point} (%s{point.Description})"))
 
     0 // return an integer exit code
+
+
+
+// todo 7: transform the search function(s) to return a sequence of trips
