@@ -1,129 +1,7 @@
 ﻿open System
+open susak.Model
+open susak.Routes
 
-type TripNode =
-    | Maribor
-    | Lucko
-    | Valbiska
-    | Merag
-    | MaliLosinj
-    | Susak
-
-type CarTravel = { Duration: TimeSpan; DurationRiskFactor: float }
-
-type CarTravel with
-    member this.DurationWithRiskFactor =
-        this.Duration * (1.0 + this.DurationRiskFactor)
-
-type ShipVoyage =
-    { Date: DateTime
-      DepartsOn: TimeSpan
-      ArrivesOn: TimeSpan }
-
-    member this.Duration = this.ArrivesOn - this.DepartsOn
-
-type ShipTravel =
-    { Timetable: ShipVoyage list
-      MinTimeBeforeDeparture: TimeSpan }
-
-type Pause = { Duration: TimeSpan }
-
-type TripLegType =
-    | Car of CarTravel
-    | Ship of ShipTravel
-    | Pause of Pause
-
-
-type TripLeg =
-    { From: TripNode
-      To: TripNode
-      Type: TripLegType }
-
-type TripRoute = { Legs: TripLeg list }
-
-
-let maliLosinjToSusakTimetable =
-    { Timetable =
-        [
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(5, 30, 0)
-            ArrivesOn = TimeSpan(7, 55, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(6, 0, 0)
-            ArrivesOn = TimeSpan(6, 35, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(13, 30, 0)
-            ArrivesOn = TimeSpan(14, 25, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(18, 25, 0)
-            ArrivesOn = TimeSpan(18, 55, 0) }
-          ]
-      MinTimeBeforeDeparture = TimeSpan(1, 0, 0) }
-
-let valbiskaMeragTimetable =
-    { Timetable =
-        [
-          { Date = DateTime(2023, 07, 25)
-            DepartsOn = TimeSpan(23, 59, 0)
-            ArrivesOn = TimeSpan(00, 24, 0) }
-          { Date = DateTime(2023, 07, 25)
-            DepartsOn = TimeSpan(22, 30, 0)
-            ArrivesOn = TimeSpan(22, 55, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(5, 45, 0)
-            ArrivesOn = TimeSpan(6, 10, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(7, 15, 0)
-            ArrivesOn = TimeSpan(7, 40, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(9, 15, 0)
-            ArrivesOn = TimeSpan(9, 40, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(10, 45, 0)
-            ArrivesOn = TimeSpan(11, 10, 0) }
-          { Date = DateTime(2023, 07, 26)
-            DepartsOn = TimeSpan(12, 15, 0)
-            ArrivesOn = TimeSpan(12, 40, 0) }
-          ]
-      MinTimeBeforeDeparture = TimeSpan(1, 0, 0) }
-
-let mariborSusakRoute =
-    { Legs =
-        [ { From = Maribor
-            To = Lucko
-            Type = Car { Duration = TimeSpan(1, 25, 0); DurationRiskFactor = 0.25 } }
-          { From = Lucko
-            To = Valbiska
-            Type = Car { Duration = TimeSpan(2, 10, 0); DurationRiskFactor = 0.25 } }
-          { From = Valbiska
-            To = Merag
-            Type = Ship valbiskaMeragTimetable }
-          { From = Merag
-            To = MaliLosinj
-            Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }
-          // { From = MaliLosinj
-          //   To = MaliLosinj
-          //   Type = Pause { Duration = TimeSpan(1, 0, 0) } }
-          { From = MaliLosinj
-            To = Susak
-            Type = Ship maliLosinjToSusakTimetable } ] }
-
-type TripPoint =
-    { Point: TripNode
-      Description: string
-      Time: DateTime }
-
-type Trip = { Points: TripPoint list }
-
-type Trip with
-    member this.TripDuration =
-        let firstPoint = this.Points.[0]
-        let lastPoint = this.Points.[this.Points.Length - 1]
-        lastPoint.Time - firstPoint.Time
-        
-    // score function calculated by the total travel minutes
-    member this.Score =
-        let duration = this.TripDuration
-        duration.TotalMinutes
 
 let rec continueTrip
     (routeLegsReversed: TripLeg list)
@@ -245,10 +123,10 @@ let findTrips (route: TripRoute) desiredArrivalTime : Trip option seq =
 
 [<EntryPoint>]
 let main _ =
-    let desiredArrivalTime = DateTime(2023, 07, 26, 20, 0, 0)
+    let desiredArrivalTime = DateTime(2024, 02, 04, 16, 0, 0)
 
     let trips =
-        findTrips mariborSusakRoute desiredArrivalTime
+        findTrips mariborMaliLošinjRoute desiredArrivalTime
         |> Seq.choose id
         |> Seq.sortBy (fun trip -> trip.Score)
         |> Seq.toList
@@ -263,7 +141,7 @@ let main _ =
 
         trip.Points
         |> List.iter (fun point ->
-            let time = point.Time.ToString("dd HH:mm")
+            let time = point.Time.ToString("HH:mm")
             printfn $"%s{time}: %A{point.Point} (%s{point.Description})"))
 
     0 // return an integer exit code

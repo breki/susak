@@ -1,0 +1,48 @@
+﻿module susak.Routes
+
+open System
+open susak.Model
+open susak.Timetables
+
+let mariborSusakRoute =
+    { Legs =
+        [ { From = Maribor
+            To = Lucko
+            Type = Car { Duration = TimeSpan(1, 25, 0); DurationRiskFactor = 0.25 } }
+          { From = Lucko
+            To = Valbiska
+            Type = Car { Duration = TimeSpan(2, 10, 0); DurationRiskFactor = 0.25 } }
+          { From = Valbiska
+            To = Merag
+            Type = Ship valbiskaMeragTimetableSummer2023 }
+          { From = Merag
+            To = MaliLosinj
+            Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }
+          // { From = MaliLosinj
+          //   To = MaliLosinj
+          //   Type = Pause { Duration = TimeSpan(1, 0, 0) } }
+          { From = MaliLosinj
+            To = Susak
+            Type = Ship maliLosinjToSusakTimetableSummer2023 } ] }
+    
+
+let mariborMaliLošinjRoute =
+    { Legs =
+        [ { From = Maribor
+            To = Lucko
+            Type = Car { Duration = TimeSpan(1, 25, 0); DurationRiskFactor = 0.25 } }
+          { From = Lucko
+            To = Valbiska
+            Type = Car { Duration = TimeSpan(2, 10, 0); DurationRiskFactor = 0.25 } }
+          { From = Valbiska
+            To = Merag
+            Type = Ship valbiskaMeragTimetableWinter2024 }
+          { From = Merag
+            To = MaliLosinj
+            Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }
+          { From = MaliLosinj
+            To = MaliLosinj
+            Type = Ship maliLosinjDestinationFakeShipTimetableWinter2024 } ] }
+  
+  
+  
