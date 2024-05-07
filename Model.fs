@@ -4,6 +4,9 @@ open System
 
 type TripNode =
     | Maribor
+    | Podutik
+    | Postojna
+    | Jelšane
     | Lucko
     | Valbiska
     | Merag
