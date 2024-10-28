@@ -44,6 +44,24 @@ let mariborMaliLošinjRoute =
             To = MaliLosinj
             Type = Ship maliLosinjDestinationFakeShipTimetableWinter2024 } ] }
 
+let partinjeMaliLošinjRoute =
+    { Legs =
+        [ { From = Partinje
+            To = Lucko
+            Type = Car { Duration = TimeSpan(1, 30, 0); DurationRiskFactor = 0.25 } }
+          { From = Lucko
+            To = Valbiska
+            Type = Car { Duration = TimeSpan(2, 10, 0); DurationRiskFactor = 0.25 } }
+          { From = Valbiska
+            To = Merag
+            Type = Ship valbiskaMeragTimetableWinter2024 }
+          { From = Merag
+            To = MaliLosinj
+            Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }
+          { From = MaliLosinj
+            To = MaliLosinj
+            Type = Ship maliLosinjDestinationFakeShipTimetableWinter2024 } ] }
+
 
 let mariborSusakRouteViaLjubljana =
     { Legs =

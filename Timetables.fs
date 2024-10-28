@@ -48,7 +48,7 @@ let valbiskaMeragTimetableSummer2023 =
           ]
       MinTimeBeforeDeparture = TimeSpan(1, 0, 0) }
 
-let tripDate = DateTime(2024, 05, 09)
+let tripDate = DateTime(2024, 10, 29)
 
 let valbiskaMeragTimetableWinter2024 =
     { Timetable =
@@ -76,27 +76,33 @@ let valbiskaMeragTimetableWinter2024 =
 let maliLosinjDestinationFakeShipTimetableWinter2024 =
     { Timetable =
         [
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(13, 0, 0)
             ArrivesOn = TimeSpan(13, 0, 0) }
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(13, 30, 0)
             ArrivesOn = TimeSpan(13, 30, 0) }
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(14, 0, 0)
             ArrivesOn = TimeSpan(14, 0, 0) }
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(14, 30, 0)
             ArrivesOn = TimeSpan(14, 30, 0) }
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(15, 0, 0)
             ArrivesOn = TimeSpan(15, 0, 0) }
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(15, 30, 0)
             ArrivesOn = TimeSpan(15, 30, 0) }
-          { Date = DateTime(2024, 02, 04)
+          { Date = tripDate
             DepartsOn = TimeSpan(16, 0, 0)
             ArrivesOn = TimeSpan(16, 0, 0) }
+          { Date = tripDate
+            DepartsOn = TimeSpan(16, 30, 0)
+            ArrivesOn = TimeSpan(16, 30, 0) }
+          { Date = tripDate
+            DepartsOn = TimeSpan(17, 0, 0)
+            ArrivesOn = TimeSpan(17, 0, 0) }
           ]
       MinTimeBeforeDeparture = TimeSpan(0, 0, 0) }
 

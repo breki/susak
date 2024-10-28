@@ -123,10 +123,10 @@ let findTrips (route: TripRoute) desiredArrivalTime : Trip option seq =
 
 [<EntryPoint>]
 let main _ =
-    let desiredArrivalTime = DateTime(2024, 05, 09, 17, 0, 0)
+    let desiredArrivalTime = DateTime(2024, 10, 29, 17, 0, 0)
 
     let trips =
-        findTrips mariborSusakRouteViaLjubljana desiredArrivalTime
+        findTrips partinjeMaliLošinjRoute desiredArrivalTime
         |> Seq.choose id
         |> Seq.sortBy (fun trip -> trip.Score)
         |> Seq.toList

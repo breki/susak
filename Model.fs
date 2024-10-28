@@ -4,6 +4,7 @@ open System
 
 type TripNode =
     | Maribor
+    | Partinje
     | Podutik
     | Postojna
     | Jelšane
