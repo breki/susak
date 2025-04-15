@@ -23,7 +23,7 @@ let mariborSusakRoute =
           //   Type = Pause { Duration = TimeSpan(1, 0, 0) } }
           { From = MaliLosinj
             To = Susak
-            Type = Ship maliLosinjToSusakTimetableSpring2024 } ] }
+            Type = Ship maliLosinjToSusakTimetableSpring2025 } ] }
 
 
 let mariborMaliLošinjRoute =
@@ -63,6 +63,24 @@ let partinjeMaliLošinjRoute =
             Type = Ship maliLosinjDestinationFakeShipTimetableWinter2024 } ] }
 
 
+let partinjeSusakRoute =
+    { Legs =
+        [ { From = Partinje
+            To = Lucko
+            Type = Car { Duration = TimeSpan(1, 30, 0); DurationRiskFactor = 0.25 } }
+          { From = Lucko
+            To = Valbiska
+            Type = Car { Duration = TimeSpan(2, 10, 0); DurationRiskFactor = 0.25 } }
+          { From = Valbiska
+            To = Merag
+            Type = Ship valbiskaMeragTimetableWinter2024 }
+          { From = Merag
+            To = MaliLosinj
+            Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }
+          { From = MaliLosinj
+            To = Susak
+            Type = Ship maliLosinjToSusakTimetableSpring2025 } ] }
+
 let mariborSusakRouteViaLjubljana =
     { Legs =
         [ { From = Maribor
@@ -82,10 +100,10 @@ let mariborSusakRouteViaLjubljana =
             Type = Car { Duration = TimeSpan(1, 00, 0); DurationRiskFactor = 0.25 } }
           { From = Valbiska
             To = Merag
-            Type = Ship valbiskaMeragTimetableWinter2024 }
+            Type = Ship valbiskaMeragTimetableSpring2025 }
           { From = Merag
             To = MaliLosinj
             Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }
           { From = MaliLosinj
             To = Susak
-            Type = Ship maliLosinjToSusakTimetableSpring2024 } ] }
+            Type = Ship maliLosinjToSusakTimetableSpring2025 } ] }
