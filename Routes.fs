@@ -14,7 +14,7 @@ let mariborSusakRoute =
             Type = Car { Duration = TimeSpan(2, 10, 0); DurationRiskFactor = 0.25 } }
           { From = Valbiska
             To = Merag
-            Type = Ship valbiskaMeragTimetableWinter2024 }
+            Type = Ship valbiskaMeragTimetableSpring2025 }
           { From = Merag
             To = MaliLosinj
             Type = Car { Duration = TimeSpan(1, 5, 0); DurationRiskFactor = 0.10 } }

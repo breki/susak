@@ -126,7 +126,7 @@ let main _ =
     let desiredArrivalTime = DateTime(2025, 04, 18, 16, 0, 0)
 
     let trips =
-        findTrips partinjeSusakRoute desiredArrivalTime
+        findTrips mariborSusakRoute desiredArrivalTime
         |> Seq.choose id
         |> Seq.sortBy (fun trip -> trip.Score)
         |> Seq.toList
