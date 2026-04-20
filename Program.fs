@@ -107,6 +107,23 @@ and coverShipTravel
         |> Seq.concat
 
 
+let compressCarSlack (trip: Trip) : Trip =
+    let rec loop acc remaining =
+        match remaining with
+        | (carDep: TripPoint) :: carArr :: rest
+            when carDep.Description = "car departure"
+                 && carArr.Description = "car arrival" ->
+            match acc with
+            | prev :: _ when prev.Point = carDep.Point && prev.Time < carDep.Time ->
+                let dur = carArr.Time - carDep.Time
+                let d = { carDep with Time = prev.Time }
+                let a = { carArr with Time = prev.Time + dur }
+                loop (a :: d :: acc) rest
+            | _ -> loop (carArr :: carDep :: acc) rest
+        | x :: rest -> loop (x :: acc) rest
+        | [] -> List.rev acc
+    { Points = loop [] trip.Points }
+
 let findTrips (route: TripRoute) desiredArrivalTime : Trip option seq =
     let routeLegsReversed = route.Legs |> List.rev
     let currentLeg = routeLegsReversed.[0]
@@ -123,11 +140,12 @@ let findTrips (route: TripRoute) desiredArrivalTime : Trip option seq =
 
 [<EntryPoint>]
 let main _ =
-    let desiredArrivalTime = DateTime(2025, 04, 18, 16, 0, 0)
+    let desiredArrivalTime = DateTime(2026, 04, 20, 16, 0, 0)
 
     let trips =
         findTrips mariborSusakRoute desiredArrivalTime
         |> Seq.choose id
+        |> Seq.map compressCarSlack
         |> Seq.sortBy (fun trip -> trip.Score)
         |> Seq.toList
 
